@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Notatnik Terenowy",
+    "slug": "notatnik-terenowy",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "notatnik",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "pl.filipdudzik.notatnik",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Aplikacja używa kamery do robienia zdjęć terenowych.",
+        "NSMicrophoneUsageDescription": "Aplikacja używa mikrofonu do nagrywania notatek głosowych.",
+        "NSPhotoLibraryUsageDescription": "Aplikacja zapisuje zdjęcia w pamięci urządzenia."
+      }
+    },
+    "android": {
+      "package": "pl.filipdudzik.notatnik",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "INTERNET",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}

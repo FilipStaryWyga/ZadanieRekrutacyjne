@@ -1,0 +1,17 @@
+{
+  "name": "notatnik-terenowy",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "app",
+    "server"
+  ],
+  "scripts": {
+    "app": "npm --workspace app run start",
+    "server": "npm --workspace server run dev",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "docker:up": "docker compose up -d postgres minio",
+    "docker:down": "docker compose down"
+  }
+}
