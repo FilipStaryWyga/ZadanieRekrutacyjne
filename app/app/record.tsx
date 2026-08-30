@@ -9,15 +9,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as Location from 'expo-location';
 import { useAudioRecorder, RecordingPresets } from 'expo-audio';
-import { NoteRepository } from '../src/db/repository';
-import { generateId } from '../src/lib/format';
-import {
-  saveToDocuments,
-  buildPhotoFilename,
-  buildAudioFilename,
-} from '../src/lib/files';
+import { addPhoto, createNote, finishRecording } from '../src/db/notes';
+import { formatOffset, generateId } from '../src/lib/format';
+import { saveAudioFile, savePhotoFile } from '../src/lib/files';
+import { colors } from '../src/theme';
 
 const RECORDING_OPTIONS = {
   ...RecordingPresets.HIGH_QUALITY,
@@ -26,34 +22,22 @@ const RECORDING_OPTIONS = {
 
 export default function RecordScreen() {
   const router = useRouter();
-  const repository = new NoteRepository();
-
   const cameraRef = useRef<CameraView>(null);
   const noteIdRef = useRef(generateId());
   const [title, setTitle] = useState('');
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [durationMs, setDurationMs] = useState(0);
 
-  // AUDIO SESSION: useAudioRecorder z zapisem do Documents/ (directory: 'document')
-  const recorder = useAudioRecorder(RECORDING_OPTIONS, (_status) => {
-    // offset WYŁĄCZNIE z recorder.getStatus().durationMillis
+  const recorder = useAudioRecorder(RECORDING_OPTIONS, () => {
     const status = recorder.getStatus();
     setDurationMs(status?.durationMillis ?? 0);
   });
 
   useEffect(() => {
     void requestCameraPermission();
-    void Location.requestForegroundPermissionsAsync().then(({ status: s }) => {
-      if (s === 'granted') {
-        void Location.getCurrentPositionAsync({}).then(setLocation);
-      }
-    });
   }, [requestCameraPermission]);
 
-  // CAMERA SESSION: zamontuj CameraView i poczekaj na onCameraReady,
-  // dopiero wtedy można zaczynać nagrywanie.
   const handleRecord = async () => {
     if (!cameraReady) {
       Alert.alert('Kamera gotowa?', 'Poczekaj na inicjalizację kamery.');
@@ -63,6 +47,7 @@ export default function RecordScreen() {
       await recorder.stop();
       return;
     }
+    await createNote({ id: noteIdRef.current, title });
     recorder.record();
   };
 
@@ -75,21 +60,17 @@ export default function RecordScreen() {
       return;
     }
     const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+    if (!photo?.uri) {
+      return;
+    }
 
     const photoId = generateId();
-    const savedUri = await saveToDocuments(
-      photo.uri,
-      'photos',
-      buildPhotoFilename(noteIdRef.current, photoId),
-    );
-
-    // offset zdjęcia wyliczany WYŁĄCZNIE z recorder.getStatus().durationMillis
+    const savedUri = await savePhotoFile(noteIdRef.current, photoId, photo.uri);
     const status = recorder.getStatus();
-    await repository.addPhoto({
+    await addPhoto({
       id: photoId,
       noteId: noteIdRef.current,
-      localUri: savedUri,
-      caption: null,
+      uri: savedUri,
       offsetMs: status?.durationMillis ?? 0,
     });
   };
@@ -99,33 +80,19 @@ export default function RecordScreen() {
       await recorder.stop();
     }
 
-    const audioId = generateId();
     const audioUri = recorder.uri;
     if (!audioUri) {
       Alert.alert('Błąd', 'Brak nagrania audio do zapisania.');
       return;
     }
 
-    const savedAudioUri = await saveToDocuments(
-      audioUri,
-      'audio',
-      buildAudioFilename(noteIdRef.current, audioId),
-    );
-
-    await repository.createNote({
-      id: noteIdRef.current,
-      title: title.trim() || 'Notatka bez tytułu',
-      recordedAt: Date.now(),
-      latitude: location?.coords.latitude ?? null,
-      longitude: location?.coords.longitude ?? null,
-      locationName: null,
-    });
-
-    await repository.addAudio({
-      id: audioId,
+    await createNote({ id: noteIdRef.current, title });
+    const savedAudioUri = await saveAudioFile(noteIdRef.current, audioUri);
+    await finishRecording({
       noteId: noteIdRef.current,
-      localUri: savedAudioUri,
-      durationMs: recorder.getStatus()?.durationMillis ?? 0,
+      title,
+      audioUri: savedAudioUri,
+      durationMs: recorder.getStatus()?.durationMillis ?? durationMs,
     });
 
     router.replace('/');
@@ -155,7 +122,7 @@ export default function RecordScreen() {
         />
       )}
 
-      <Text style={styles.timer}>{Math.floor(durationMs / 1000)}s</Text>
+      <Text style={styles.timer}>{formatOffset(durationMs)}</Text>
 
       <View style={styles.controls}>
         <Pressable style={styles.button} onPress={handleTakePhoto}>
@@ -178,29 +145,32 @@ export default function RecordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1, padding: 16, backgroundColor: colors.background },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     borderRadius: 8,
     padding: 12,
     marginBottom: 16,
+    color: colors.text,
   },
   camera: { flex: 1, borderRadius: 12, overflow: 'hidden' },
   cameraPlaceholder: {
     flex: 1,
     borderRadius: 12,
-    backgroundColor: '#e2e2e2',
+    backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  hint: { color: '#2f6fdb', fontWeight: '600' },
+  hint: { color: colors.accent, fontWeight: '600' },
   timer: {
     alignSelf: 'center',
     marginTop: 8,
     fontSize: 20,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
+    color: colors.text,
   },
   controls: {
     flexDirection: 'row',
@@ -209,13 +179,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   button: {
-    backgroundColor: '#2f6fdb',
+    backgroundColor: colors.accent,
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 30,
   },
   recordButton: {
-    backgroundColor: '#d43f3f',
+    backgroundColor: colors.recording,
     paddingVertical: 20,
     paddingHorizontal: 32,
     borderRadius: 36,

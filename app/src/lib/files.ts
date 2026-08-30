@@ -1,45 +1,49 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
-// ============================================================================
-// Moduł plików - zapis WYŁĄCZNIE w Documents/, NIGDY w Cache/.
-// Pliki lokalne nigdy nie giną przy błędzie backendu (fail-safe).
-// ============================================================================
-
-const NOTEBOOK_DIR = 'notatnik';
-
-async function ensureRootDirectory(): Promise<string> {
+function documentsRoot(): string {
   const docs = FileSystem.documentDirectory;
   if (!docs) {
-    throw new Error('Brak dostępu do katalogu dokumentów');
+    throw new Error('Brak dostępu do katalogu Documents');
   }
-  const dir = `${docs}${NOTEBOOK_DIR}/`;
-  const info = await FileSystem.getInfoAsync(dir);
-  if (!info.exists) {
-    await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
-  }
-  return dir;
+  return docs;
 }
 
-export async function saveToDocuments(
+export function noteDirectory(noteId: string): string {
+  return `${documentsRoot()}notes/${noteId}/`;
+}
+
+export function photosDirectory(noteId: string): string {
+  return `${noteDirectory(noteId)}photos/`;
+}
+
+export function audioPath(noteId: string): string {
+  return `${noteDirectory(noteId)}audio.m4a`;
+}
+
+export function photoPath(noteId: string, photoId: string): string {
+  return `${photosDirectory(noteId)}${photoId}.jpg`;
+}
+
+export async function ensureNoteDirectories(noteId: string): Promise<void> {
+  await FileSystem.makeDirectoryAsync(photosDirectory(noteId), {
+    intermediates: true,
+  });
+}
+
+export async function savePhotoFile(
+  noteId: string,
+  photoId: string,
   sourceUri: string,
-  subdir: 'photos' | 'audio',
-  filename: string,
 ): Promise<string> {
-  const parent = await ensureRootDirectory();
-  const targetDir = `${parent}${subdir}/`;
-  const dirInfo = await FileSystem.getInfoAsync(targetDir);
-  if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(targetDir, { intermediates: true });
-  }
-  const targetUri = `${targetDir}${filename}`;
-  await FileSystem.copyAsync({ from: sourceUri, to: targetUri });
-  return targetUri;
+  await ensureNoteDirectories(noteId);
+  const dest = photoPath(noteId, photoId);
+  await FileSystem.copyAsync({ from: sourceUri, to: dest });
+  return dest;
 }
 
-export function buildPhotoFilename(noteId: string, photoId: string): string {
-  return `${noteId}_${photoId}_${Date.now()}.jpg`;
-}
-
-export function buildAudioFilename(noteId: string, audioId: string): string {
-  return `${noteId}_${audioId}.m4a`;
+export async function saveAudioFile(noteId: string, sourceUri: string): Promise<string> {
+  await ensureNoteDirectories(noteId);
+  const dest = audioPath(noteId);
+  await FileSystem.copyAsync({ from: sourceUri, to: dest });
+  return dest;
 }

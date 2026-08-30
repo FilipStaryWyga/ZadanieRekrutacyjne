@@ -1,6 +1,5 @@
 export function formatTimestamp(epochMs: number): string {
-  const date = new Date(epochMs);
-  return date.toLocaleString('pl-PL', {
+  return new Date(epochMs).toLocaleString('pl-PL', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -9,21 +8,15 @@ export function formatTimestamp(epochMs: number): string {
   });
 }
 
-export function formatDuration(durationMs: number | null): string {
-  if (!durationMs) {
-    return '0:00';
-  }
-  const totalSeconds = Math.floor(durationMs / 1000);
+export function formatOffset(offsetMs: number): string {
+  const totalSeconds = Math.max(0, Math.floor(offsetMs / 1000));
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
 
-export function formatOffset(offsetMs: number): string {
-  const totalSeconds = Math.floor(offsetMs / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+export function formatDuration(durationMs: number | null): string {
+  return formatOffset(durationMs ?? 0);
 }
 
 export function generateId(): string {

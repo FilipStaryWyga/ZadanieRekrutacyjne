@@ -1,52 +1,61 @@
-export type UUID = string;
+export type NoteStatus =
+  | 'recorded'
+  | 'uploading'
+  | 'processing'
+  | 'ready'
+  | 'error';
 
-// ============================================================================
-// Typy domenowe - wspólne dla warstwy DB i UI.
-// Schemat SQLite współdzielony z backendem (Postgres) w zakresie domeny.
-// ============================================================================
+export type Photo = {
+  id: string;
+  noteId: string;
+  uri: string;
+  offsetMs: number;
+  uploaded: boolean;
+};
 
-export interface DBNote {
-  id: UUID;
+export type Block =
+  | { type: 'paragraph'; text: string }
+  | { type: 'photo'; photoId: string; atMs: number };
+
+export type Note = {
+  id: string;
   title: string;
-  body: string;
-  summary: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  locationName: string | null;
-  recordedAt: number; // epoch ms - liczone lokalnie na telefonie
-  recordStatus: 'recording' | 'done';
-  syncStatus: 'pending' | 'syncing' | 'synced' | 'error';
-  createdAt: number;
-  updatedAt: number;
-}
-
-export interface DBPhoto {
-  id: UUID;
-  noteId: UUID;
-  localUri: string;
-  caption: string | null;
-  offsetMs: number; // offset liczony WYŁĄCZNIE z recorder.getStatus().durationMillis
-  syncStatus: 'pending' | 'syncing' | 'synced' | 'error';
-  createdAt: number;
-}
-
-export interface DBAudio {
-  id: UUID;
-  noteId: UUID;
-  localUri: string;
+  status: NoteStatus;
+  recordedAt: number;
   durationMs: number | null;
-  syncStatus: 'pending' | 'syncing' | 'synced' | 'error';
-  createdAt: number;
-}
+  audioUri: string | null;
+  summary: string | null;
+  blocks: Block[] | null;
+  errorMessage: string | null;
+  audioUploaded: boolean;
+  photos: Photo[];
+};
 
-export type NewNoteInput = Pick<
-  DBNote,
-  'id' | 'title' | 'recordedAt' | 'longitude' | 'latitude' | 'locationName'
->;
+export type NoteListItem = {
+  id: string;
+  title: string;
+  status: NoteStatus;
+  recordedAt: number;
+  durationMs: number | null;
+  thumbnailUri: string | null;
+  errorMessage: string | null;
+};
 
-export type NewPhotoInput = Pick<
-  DBPhoto,
-  'id' | 'noteId' | 'localUri' | 'caption' | 'offsetMs'
->;
+export type CreateNoteInput = {
+  id: string;
+  title?: string;
+};
 
-export type NewAudioInput = Pick<DBAudio, 'id' | 'noteId' | 'localUri' | 'durationMs'>;
+export type AddPhotoInput = {
+  id: string;
+  noteId: string;
+  uri: string;
+  offsetMs: number;
+};
+
+export type FinishRecordingInput = {
+  noteId: string;
+  title: string;
+  audioUri: string;
+  durationMs: number;
+};

@@ -2,24 +2,25 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
+  Image,
   FlatList,
   Pressable,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { NoteRepository } from '../src/db/repository';
-import type { DBNote } from '../src/db/types';
+import { listNotes } from '../src/db/notes';
+import type { NoteListItem } from '../src/db/types';
 import { formatTimestamp } from '../src/lib/format';
+import { colors } from '../src/theme';
 
 export default function IndexScreen() {
   const router = useRouter();
-  const repository = new NoteRepository();
-  const [notes, setNotes] = useState<DBNote[]>([]);
+  const [notes, setNotes] = useState<NoteListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const allNotes = await repository.getAllNotes();
+    const allNotes = await listNotes();
     setNotes(allNotes);
     setLoading(false);
   }, []);
@@ -28,21 +29,29 @@ export default function IndexScreen() {
     void refresh();
   }, [refresh]);
 
-  const renderItem = ({ item }: { item: DBNote }) => (
+  const renderItem = ({ item }: { item: NoteListItem }) => (
     <Pressable
       style={styles.card}
       onPress={() => router.push(`/detail?id=${item.id}`)}
     >
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.meta}>{formatTimestamp(item.recordedAt)}</Text>
-      {item.summary ? <Text style={styles.summary}>{item.summary}</Text> : null}
+      {item.thumbnailUri ? (
+        <Image source={{ uri: item.thumbnailUri }} style={styles.thumb} />
+      ) : (
+        <View style={[styles.thumb, styles.thumbPlaceholder]} />
+      )}
+      <View style={styles.cardBody}>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.meta}>
+          {formatTimestamp(item.recordedAt)} · {item.status}
+        </Text>
+      </View>
     </Pressable>
   );
 
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator style={styles.loader} />
+        <ActivityIndicator style={styles.loader} color={colors.accent} />
       ) : (
         <FlatList
           data={notes}
@@ -59,18 +68,23 @@ export default function IndexScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1, padding: 16, backgroundColor: colors.background },
   loader: { marginTop: 40 },
   card: {
-    backgroundColor: '#f4f4f4',
+    backgroundColor: colors.surface,
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  title: { fontSize: 18, fontWeight: '600' },
-  meta: { color: '#666', marginTop: 4, fontSize: 13 },
-  summary: { marginTop: 8, color: '#333' },
-  empty: { textAlign: 'center', marginTop: 40, color: '#888' },
+  thumb: { width: 56, height: 56, borderRadius: 8 },
+  thumbPlaceholder: { backgroundColor: colors.border },
+  cardBody: { flex: 1 },
+  title: { fontSize: 18, fontWeight: '600', color: colors.text },
+  meta: { color: colors.muted, marginTop: 4, fontSize: 13 },
+  empty: { textAlign: 'center', marginTop: 40, color: colors.muted },
   fab: {
     position: 'absolute',
     right: 24,
@@ -78,7 +92,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#2f6fdb',
+    backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,55 +1,66 @@
 import * as SQLite from 'expo-sqlite';
 
-// ============================================================================
-// Schema SQLite - offline-first źródło prawdy.
-// Wszystkie pliki lokalne zapisywane są w Documents/, NIGDY w Cache/.
-// ============================================================================
+const DB_NAME = 'notatnik.db';
+const SCHEMA_VERSION = 1;
 
-export const SCHEMA = `
+const CREATE_TABLES = `
 CREATE TABLE IF NOT EXISTS notes (
-  id            TEXT PRIMARY KEY,
-  title         TEXT NOT NULL,
-  body          TEXT NOT NULL DEFAULT '',
-  summary       TEXT,
-  latitude      REAL,
-  longitude     REAL,
-  location_name TEXT,
-  recorded_at   INTEGER NOT NULL,
-  record_status TEXT NOT NULL DEFAULT 'done',
-  sync_status   TEXT NOT NULL DEFAULT 'pending',
-  created_at    INTEGER NOT NULL,
-  updated_at    INTEGER NOT NULL
+  id              TEXT PRIMARY KEY,
+  title           TEXT NOT NULL DEFAULT '',
+  status          TEXT NOT NULL DEFAULT 'recorded',
+  recorded_at     INTEGER NOT NULL,
+  duration_ms     INTEGER,
+  audio_uri       TEXT,
+  summary         TEXT,
+  blocks_json     TEXT,
+  error_message   TEXT,
+  audio_uploaded  INTEGER NOT NULL DEFAULT 0,
+  created_at      INTEGER NOT NULL,
+  updated_at      INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS photos (
-  id         TEXT PRIMARY KEY,
-  note_id    TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-  local_uri  TEXT NOT NULL,
-  caption    TEXT,
-  offset_ms  INTEGER NOT NULL DEFAULT 0,
-  sync_status TEXT NOT NULL DEFAULT 'pending',
-  created_at INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS audio (
   id          TEXT PRIMARY KEY,
   note_id     TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-  local_uri   TEXT NOT NULL,
-  duration_ms INTEGER,
-  sync_status TEXT NOT NULL DEFAULT 'pending',
+  uri         TEXT NOT NULL,
+  offset_ms   INTEGER NOT NULL,
+  uploaded    INTEGER NOT NULL DEFAULT 0,
   created_at  INTEGER NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_photos_note_id ON photos(note_id);
-CREATE INDEX IF NOT EXISTS idx_audio_note_id ON audio(note_id);
+CREATE INDEX IF NOT EXISTS idx_notes_recorded_at ON notes(recorded_at DESC);
 `;
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
+async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
+  await db.execAsync('PRAGMA foreign_keys = ON');
+
+  const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+  const current = row?.user_version ?? 0;
+
+  if (current >= SCHEMA_VERSION) {
+    return;
+  }
+
+  if (current < 1) {
+    // Wcześniejszy szkic miał inną tabelę notes + osobne audio.
+    // user_version = 0 oznacza: schemat niezgodny z kontraktem Kroku 1.
+    await db.execAsync(`
+      DROP TABLE IF EXISTS audio;
+      DROP TABLE IF EXISTS photos;
+      DROP TABLE IF EXISTS notes;
+      ${CREATE_TABLES}
+      PRAGMA user_version = 1;
+    `);
+  }
+}
+
 export function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (!dbPromise) {
-    dbPromise = SQLite.openDatabaseAsync('notatnik.db').then(async (db) => {
-      await db.execAsync(SCHEMA);
+    dbPromise = SQLite.openDatabaseAsync(DB_NAME).then(async (db) => {
+      await migrate(db);
       return db;
     });
   }
