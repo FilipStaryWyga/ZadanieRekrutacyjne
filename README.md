@@ -144,11 +144,22 @@ npm test
 
 ## 7. Świadomie Opisane Braki i Plan Dalszego Rozwoju (Next Steps)
 
-1. **Wyszukiwarka pełnotekstowa (FTS5 w SQLite):**
-   - Indeksacja transkrypcji w lokalnej bazie SQLite, umożliwiająca błyskawiczne wyszukiwanie notatek po słowach kluczowych (np. „zderzak”, „korozja”, „reflektor”).
-2. **Background Sync z WorkManagerem:**
-   - Wdrożenie natywnej kolejki synchronizacji w tle (`expo-background-fetch` / `WorkManager` na Androidzie), która automatycznie wysyła oczekujące notatki, gdy telefon odzyska stabilne połączenie Wi-Fi.
-3. **Klasyfikacja uszkodzeń z Vision LLM (Multimodal):**
-   - Dodanie analizy zdjęć przez GPT-4o Vision w celu automatycznego tagowania widocznych części pojazdu (np. „błotnik przedni lewy”) i weryfikacji spójności między opisem słownym a obrazem.
-4. **Eksport do raportu PDF:**
-   - Generowanie gotowego raportu PDF z logotypem firmy, metadanymi oględzin, podsumowaniem oraz tabelą zdjęć z podpisami do wysyłki do klienta/ubezpieczyciela.
+-Usuwanie nagran/edycja, wyszukiwarka po notatce lub transkrypcji
+-Nie posiadalem klucza API by przestestowac transkrypcje, ale dokladnie sprawdzilem poprawnosc kodu z AI i powinno dzialac
+-Dodac opisywanie zdjec za pomoca AI
+-Dodac tluamczenie notatki na inny jezyk
+-Generowanie raportow 
+
+
+
+## 8. Praca z AI
+
+Praca z AI:
+Stwierdziłem, że przygotowanie tej aplikacji przy użyciu Claude Code lub innego płatnego narzędzia byłoby za łatwe, dlatego całość powstała w 100% na darmowych planach i limitach udostępnianych przez różne modele AI.
+1. Przygotowanie planu oraz stacku z gemini - plik "plan.txt" tak aby kazdy model wzorowal sie na tym pliku.
+2. Stowrzenie struktury folderu i implementacja stacku za pomoca OpenCode(bardzo wolny, gubi kontekst oraz popelnia duzo bledow)
+3. Stworzenie logiki interwejsu, nagyrwanie audio oraz aparat za pomoca Cursora, oraz naprawil sciezke, ktora byla zle napisana przez OpenCode(LLM grok medium - wylapal bledy, jednak po zaledwie 2 promptach skonczyly sie limity)
+4. (Antigravity) Stworzenie ekranu nagrywania min. Dodano konfigurację pluginu expo-camera z parametrem recordAudioAndroid: false, uniemożliwiającym aparatowi przejęcie mikrofonu na Androidzie.(dzieki temu nagrywanie nie bedzie sie zatrzymywac podczas robienia zdjecia) oraz dodano(bardzo szybki, swietne rozumowanie oraz dobrze zrozumial zadanie, sam dawal podpowiedzi i dokladnie opisywal kazda zmiane, jedno z najlepszych darmowych narzedzi)
+5. Testowanie aplikacji na telefonie przez expo z pomoca DeepSeeka
+6. (Antigravity) Naprawa pierwszy bledow z zapisem nagrywania + AI po opisaniu problemu znalazl dodatkowe bledy z "Konwersja jednostek w OpenAI Whisper API" "Brak Pipeline'u Przetwarzania w Aplikacji" i "Brak Widoku Przetworzonej Notatki"
+7. Edycja wygladu wszystkie 5 plikow detail, index, layout, record, theme wrzucone do Kimi(K3 byl przeciazony wiec musialem sie poslyzyc modelem k2.6)

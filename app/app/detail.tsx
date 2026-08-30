@@ -10,6 +10,7 @@ import {
   Modal,
   Alert,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
@@ -24,16 +25,16 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 function getStatusBadge(status: NoteStatus): { label: string; bg: string; text: string } {
   switch (status) {
     case 'ready':
-      return { label: '✓ Gotowa (Przetworzona)', bg: '#DCFCE7', text: '#15803D' };
+      return { label: '✓ Gotowa (Przetworzona)', bg: '#ECFDF5', text: '#047857' };
     case 'processing':
-      return { label: '⚙ Przetwarzanie AI…', bg: '#EDE9FE', text: '#6D28D9' };
+      return { label: '⚙ Przetwarzanie AI…', bg: '#F5F3FF', text: '#6D28D9' };
     case 'uploading':
-      return { label: '↑ Wysyłanie plików…', bg: '#FEF3C7', text: '#B45309' };
+      return { label: '↑ Wysyłanie plików…', bg: '#FFFBEB', text: '#B45309' };
     case 'error':
-      return { label: '✕ Wymaga ponowienia', bg: '#FEE2E2', text: '#B91C1C' };
+      return { label: '✕ Wymaga ponowienia', bg: '#FEF2F2', text: '#B91C1C' };
     case 'recorded':
     default:
-      return { label: '● Oczekuje na przetworzenie', bg: '#F3F4F6', text: '#4B5563' };
+      return { label: '● Oczekuje na przetworzenie', bg: '#F5F5F4', text: '#57534E' };
   }
 }
 
@@ -105,7 +106,7 @@ function AudioPlayerCard({
         style={styles.progressBarBg}
         onPress={(e) => {
           const { locationX } = e.nativeEvent;
-          const barWidth = SCREEN_WIDTH - 64;
+          const barWidth = SCREEN_WIDTH - 80;
           const ratio = Math.max(0, Math.min(1, locationX / barWidth));
           handleSeek(ratio);
         }}
@@ -231,7 +232,7 @@ export default function DetailScreen() {
       <View style={styles.actionSection}>
         {isProcessing ? (
           <View style={styles.processingBox}>
-            <ActivityIndicator size="small" color={colors.accent} />
+            <ActivityIndicator size="small" color={colors.processing} />
             <Text style={styles.processingText}>{processStatusLabel}</Text>
           </View>
         ) : isUnprocessed ? (
@@ -274,7 +275,7 @@ export default function DetailScreen() {
                   <View key={`seg-${index}`} style={styles.transcriptBlock}>
                     <View style={styles.transcriptTimeRow}>
                       <Text style={styles.transcriptTimeBadge}>
-                        ⏱ {formatOffset(block.startMs ?? 0)} - {formatOffset(block.endMs ?? 0)}
+                        ⏱ {formatOffset(block.startMs ?? 0)} – {formatOffset(block.endMs ?? 0)}
                       </Text>
                     </View>
                     <Text style={styles.transcriptText}>{block.text}</Text>
@@ -386,138 +387,151 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   contentContainer: {
-    padding: 16,
-    paddingBottom: 60,
+    padding: 20,
+    paddingBottom: 80,
   },
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: 16,
     color: colors.muted,
-    fontSize: 15,
+    fontSize: 16,
+    fontWeight: '500',
   },
   header: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
     alignSelf: 'flex-start',
   },
   badgeText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   dateText: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.muted,
+    fontWeight: '500',
   },
   title: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '900',
     color: colors.text,
-    lineHeight: 28,
+    lineHeight: 34,
+    letterSpacing: -0.5,
   },
   // Odtwarzacz
   playerCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: '#F5F5F4',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 10,
+      },
+      android: { elevation: 2 },
+    }),
   },
   playerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 14,
+    gap: 16,
+    marginBottom: 16,
   },
   playButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   playButtonIcon: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 22,
   },
   playerInfo: {
     flex: 1,
   },
   playerLabel: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '800',
     color: colors.text,
   },
   playerTimes: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.muted,
-    marginTop: 2,
+    marginTop: 3,
     fontVariant: ['tabular-nums'],
+    fontWeight: '600',
   },
   progressBarBg: {
-    height: 8,
-    backgroundColor: '#EAE6DD',
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: '#F5F5F4',
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: colors.accent,
-    borderRadius: 4,
+    borderRadius: 3,
   },
   // Akcje i błędy
   actionSection: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   processButton: {
     backgroundColor: colors.accent,
-    paddingVertical: 16,
-    borderRadius: 14,
+    paddingVertical: 18,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 3,
+    ...Platform.select({
+      ios: {
+        shadowColor: colors.accent,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+      },
+      android: { elevation: 3 },
+    }),
   },
   processButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   reprocessButton: {
     backgroundColor: 'transparent',
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingVertical: 12,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
   reprocessButtonText: {
     color: colors.muted,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
   },
   processingBox: {
     flexDirection: 'row',
@@ -525,176 +539,208 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#F5F3FF',
     borderWidth: 1,
-    borderColor: '#DDD6FE',
-    padding: 16,
-    borderRadius: 14,
+    borderColor: '#E9E5FF',
+    padding: 18,
+    borderRadius: 16,
     gap: 12,
   },
   processingText: {
-    color: '#6D28D9',
-    fontSize: 14,
-    fontWeight: '600',
+    color: colors.processing,
+    fontSize: 15,
+    fontWeight: '700',
   },
   errorBox: {
     backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#EF4444',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
   },
   errorBoxTitle: {
     color: '#991B1B',
-    fontWeight: '700',
-    fontSize: 14,
-    marginBottom: 4,
+    fontWeight: '800',
+    fontSize: 15,
+    marginBottom: 6,
   },
   errorBoxText: {
     color: '#7F1D1D',
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 6,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 8,
   },
   errorBoxHint: {
     color: '#B91C1C',
-    fontSize: 12,
+    fontSize: 13,
     fontStyle: 'italic',
+    lineHeight: 18,
   },
   // Podsumowanie AI
   summaryCard: {
-    backgroundColor: '#FAF8F5',
+    backgroundColor: '#F0FDFA',
     borderLeftWidth: 4,
-    borderLeftColor: '#2F6FDB',
-    borderRadius: 12,
-    padding: 16,
+    borderLeftColor: colors.accent,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 6,
+      },
+      android: { elevation: 1 },
+    }),
   },
   summaryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 10,
+    gap: 10,
+    marginBottom: 12,
   },
   summaryIcon: {
-    fontSize: 18,
+    fontSize: 20,
   },
   summaryTitle: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: colors.text,
   },
   summaryContent: {
-    fontSize: 14,
-    color: colors.text,
-    lineHeight: 22,
+    fontSize: 15,
+    color: colors.muted,
+    lineHeight: 24,
+    fontWeight: '500',
   },
   // Oś czasu i transkrypcja
   timelineSection: {
-    marginTop: 8,
+    marginTop: 4,
   },
   sectionHeading: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '900',
     color: colors.text,
     marginBottom: 4,
+    letterSpacing: -0.3,
   },
   sectionSubheading: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.muted,
-    marginBottom: 16,
-    lineHeight: 18,
+    marginBottom: 20,
+    lineHeight: 20,
+    fontWeight: '500',
   },
   timelineList: {
-    gap: 14,
+    gap: 16,
   },
   transcriptBlock: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 16,
+    padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    borderColor: '#F5F5F4',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 6,
+      },
+      android: { elevation: 1 },
+    }),
   },
   transcriptTimeRow: {
-    marginBottom: 6,
+    marginBottom: 8,
   },
   transcriptTimeBadge: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.muted,
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#A8A29E',
     fontVariant: ['tabular-nums'],
+    letterSpacing: 0.5,
   },
   transcriptText: {
-    fontSize: 15,
+    fontSize: 16,
     color: colors.text,
-    lineHeight: 22,
+    lineHeight: 24,
+    fontWeight: '500',
   },
   photoBlock: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
-    padding: 10,
+    borderRadius: 16,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#E2DFD8',
+    borderColor: colors.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
   },
   photoBlockHeader: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   photoTimeBadge: {
-    backgroundColor: '#EFF6FF',
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 6,
+    backgroundColor: '#F0FDFA',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 20,
     alignSelf: 'flex-start',
   },
   photoTimeBadgeText: {
     color: colors.accent,
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
   timelinePhoto: {
     width: '100%',
-    height: 220,
-    borderRadius: 10,
+    height: 240,
+    borderRadius: 12,
   },
   photoPlaceholder: {
-    height: 140,
-    backgroundColor: '#EAE6DD',
-    borderRadius: 10,
+    height: 160,
+    backgroundColor: '#F5F5F4',
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   photoPlaceholderText: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: 14,
+    fontWeight: '600',
   },
   // Galeria nieprzetworzona
   gallerySection: {
-    marginTop: 8,
+    marginTop: 4,
   },
   emptyPhotosBox: {
-    padding: 24,
+    padding: 28,
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F5F5F4',
   },
   emptyPhotosText: {
     color: colors.muted,
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '500',
   },
   photosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 12,
   },
   gridPhotoContainer: {
-    width: (SCREEN_WIDTH - 42) / 2,
-    height: 140,
-    borderRadius: 10,
+    width: (SCREEN_WIDTH - 52) / 2,
+    height: (SCREEN_WIDTH - 52) / 2 * 1.1,
+    borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -704,33 +750,33 @@ const styles = StyleSheet.create({
   },
   gridPhotoBadge: {
     position: 'absolute',
-    bottom: 6,
-    right: 6,
+    bottom: 8,
+    right: 8,
     backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   gridPhotoBadgeText: {
     color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   // Modal powiększenia
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.92)',
+    backgroundColor: 'rgba(0,0,0,0.95)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCloseButton: {
     position: 'absolute',
-    top: 50,
+    top: 60,
     right: 20,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     borderRadius: 20,
     zIndex: 10,
   },
@@ -741,9 +787,9 @@ const styles = StyleSheet.create({
   },
   modalImage: {
     width: SCREEN_WIDTH,
-    height: SCREEN_WIDTH * 1.3,
+    height: SCREEN_WIDTH * 1.2,
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
 });
