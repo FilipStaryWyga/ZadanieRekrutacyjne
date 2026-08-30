@@ -1,0 +1,36 @@
+===============================================================================
+PROJECT: NOTATNIK TERENOWY (AI-FIRST MOBILE APP)
+===============================================================================
+
+1. STACK TECHNOLOGICZNY
+-------------------------------------------------------------------------------
+- App: React Native (Expo SDK 57, Managed Workflow, TypeScript, expo-router)
+- Audio/Video: expo-audio, expo-camera (użyj recordAudioAndroid: false)
+- Local Database: expo-sqlite (Źródło prawdy offline, relacje: notes + photos)
+- Local Filesystem: expo-file-system (Zapis w Documents/, NIGDY w Cache/)
+- Backend: Node.js (TypeScript) + Fastify
+- Server DB & Storage: Postgres (migracje .sql) + MinIO (S3 compatible) via Docker
+- AI Integration: OpenAI Whisper-1 (transkrypcja ze znacznikami czasu) + LLM (podsumowanie)
+- Testing: Vitest (dla algorytmu przeplotu transkrypcji i zdjęć)
+
+2. ZASADY INŻYNIERSKIE I ARCHITEKTURA
+-------------------------------------------------------------------------------
+- OFFLINE-FIRST: Notatka tworzy się lokalnie. Unikalne ID generowane jest na telefonie.
+- AUDIO/CAMERA SESSION: Najpierw setAudioModeAsync i montaż CameraView, dopiero po onCameraReady wywołaj recorder.record().
+- TIMESTAMPS: Offset zdjęcia wyliczaj WYŁĄCZNIE z recorder.getStatus().durationMillis.
+- FAIL-SAFE: Przetwarzanie musi być idempotentne (upsert). Przy błędzie backendu pliki lokalne NIE MOGĄ zginąć. Retry dosyła tylko brakujące pliki.
+- SECURITY: Klucze API (OpenAI/Anthropic) znajdują się WYŁĄCZNIE na backendzie.
+- TYPOGRAFIA I JAKOŚĆ: Generuj bezpieczny TypeScript, bez typów 'any'. Używaj zdefiniowanych typów domenowych z db/types.ts.
+
+3. STRUKTURA PROJEKTU
+-------------------------------------------------------------------------------
+/app                   -> Kod aplikacji Expo (React Native)
+  /src/db              -> Typy, schemat SQLite oraz repozytorium danych
+  /src/lib             -> Moduły plików, formatowanie, obsługa API
+  /app                 -> Strony expo-router (index, record, detail)
+/server                -> Kod serwera Fastify
+  /migrations          -> Czyste pliki .sql
+  /src/routes          -> Trasy API (notes, upload, process)
+  /src/lib             -> Algorytm przeplotu zdjęć + integracja OpenAI Whispera/LLM
+docker-compose.yml     -> Usługi Postgres, MinIO i serwera Fastify
+===============================================================================
