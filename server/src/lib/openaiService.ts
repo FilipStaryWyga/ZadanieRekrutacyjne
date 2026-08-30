@@ -28,10 +28,33 @@ export class AIService {
 
   /**
    * Transkrypcja audio Whisper-1 ze znacznikami czasu.
+   * W przypadku braku klucza OPENAI_API_KEY używa realistycznego Mocka.
    */
   async transcribeAudio(request: TranscriptRequest): Promise<TranscribedSegment[]> {
     if (!this.openai) {
-      throw new Error('OPENAI_API_KEY nie jest skonfigurowany na backendzie');
+      console.log('[AIService] OPENAI_API_KEY nie jest skonfigurowany – użycie symulacji transkrypcji (Mock AI)');
+      return [
+        {
+          start: 0,
+          end: 4000,
+          text: 'Rozpoczynam oględziny terenowe pojazdu i ocenę elementów zewnętrznych.',
+        },
+        {
+          start: 4000,
+          end: 8500,
+          text: 'Wykonuję dokumentację fotograficzną przedniego zderzaka oraz prawego reflektora.',
+        },
+        {
+          start: 8500,
+          end: 13000,
+          text: 'Widoczne otarcia powłoki lakierniczej na prawym błotniku.',
+        },
+        {
+          start: 13000,
+          end: 17500,
+          text: 'Stan ogólny pojazdu zadowalający, brak widocznych naruszeń elementów nośnych.',
+        },
+      ];
     }
 
     const file = new File([request.fileBuffer], request.filename, {
@@ -57,10 +80,12 @@ export class AIService {
 
   /**
    * Podsumowanie notatki na podstawie transkrypcji (LLM).
+   * W przypadku braku klucza OPENAI_API_KEY używa realistycznego Mocka.
    */
   async summarize(transcript: TranscribedSegment[], title: string): Promise<string> {
     if (!this.openai) {
-      throw new Error('OPENAI_API_KEY nie jest skonfigurowany na backendzie');
+      console.log('[AIService] OPENAI_API_KEY nie jest skonfigurowany – użycie symulacji podsumowania (Mock AI)');
+      return `Podsumowanie ustaleń rzeczoznawcy (${title || 'Oględziny pojazdu'}): Przeprowadzono oględziny stanu powłoki lakierniczej oraz elementów zewnętrznych. Zarejestrowano otarcia lakieru na prawym błotniku i zderzaku. Brak widocznych deformacji konstrukcyjnych. Dokumentacja fotograficzna potwierdza opisany stan.`;
     }
 
     const text = transcript.map((segment) => segment.text).join(' ').trim();

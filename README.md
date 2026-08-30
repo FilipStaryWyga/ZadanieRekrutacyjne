@@ -103,16 +103,16 @@ Skopiuj plik `.env.example` do `.env` w głównym katalogu oraz `app/.env`:
 cp .env.example .env
 ```
 
-Uzupełnij klucz OpenAI w pliku `.env`:
+Uzupełnij klucz OpenAI w pliku `.env` (opcjonalnie):
 ```env
 OPENAI_API_KEY=sk-...twoj-klucz-openai...
 ```
+> **Uwaga (Tryb Mock AI):** Jeśli nie podasz klucza `OPENAI_API_KEY`, serwer automatycznie przełączy się w tryb **Mock AI** (inteligentna symulacja transkrypcji Whisper i podsumowania LLM dla rzeczoznawcy). Pozwala to w pełni przetestować aplikację i wszystkie ekrany bez ponoszenia kosztów i posiadania konta OpenAI.
 
-W `app/.env` upewnij się, że adres IP wskazuje na Twój komputer w sieci lokalnej (aby telefon z Androidem mógł połączyć się z backendem Fastify):
+W `app/.env` upewnij się, że adres wskazuje na backend (dla telefonu podłączonego przez USB z `adb reverse` wystarczy domyślne `http://localhost:3000`):
 ```env
-EXPO_PUBLIC_API_URL=http://192.168.1.XXX:3000
+EXPO_PUBLIC_API_URL=http://localhost:3000
 ```
-*(Jeśli testujesz przez adb reverse: `adb reverse tcp:3000 tcp:3000`, możesz użyć `http://localhost:3000`)*.
 
 ### Krok 4: Uruchomienie bazy danych i MinIO (Docker)
 ```bash
