@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   findSegmentForOffset,
   interleavePhotosAndTranscript,
+  generateInterleavedBlocks,
 } from '../src/lib/interleave';
 import type { TranscribedSegment } from '../src/types';
 
@@ -29,6 +30,17 @@ describe('findSegmentForOffset', () => {
   it('offset na granicy należy do segmentu rozpoczynającego się w tym punkcie', () => {
     expect(findSegmentForOffset(3000, segments)).toEqual({ segmentIndex: 1 });
   });
+
+  it('dopasowuje zdjęcie wykonane w czasie pauzy do najbliższego segmentu', () => {
+    const segmentsWithGap: TranscribedSegment[] = [
+      { start: 0, end: 2000, text: 'Zderzak przedni' },
+      { start: 5000, end: 7000, text: 'Błotnik lewy' },
+    ];
+    // 2500ms jest 500ms po pierwszym segmencie i 2500ms przed drugim -> segmentIndex 0
+    expect(findSegmentForOffset(2500, segmentsWithGap)).toEqual({ segmentIndex: 0 });
+    // 4500ms jest 500ms przed drugim segmentem -> segmentIndex 1
+    expect(findSegmentForOffset(4500, segmentsWithGap)).toEqual({ segmentIndex: 1 });
+  });
 });
 
 describe('interleavePhotosAndTranscript', () => {
@@ -53,5 +65,47 @@ describe('interleavePhotosAndTranscript', () => {
     ]);
     expect(result[0].transcript).toBe('');
     expect(result[0].segmentIndex).toBeNull();
+  });
+});
+
+describe('generateInterleavedBlocks', () => {
+  it('układa segmenty i zdjęcia w prawidłowej kolejności chronologicznej', () => {
+    const photos = [
+      { id: 'p1', offsetMs: 1500, caption: 'zdjęcie 1' },
+      { id: 'p2', offsetMs: 5000, caption: 'zdjęcie 2' },
+    ];
+    const blocks = generateInterleavedBlocks(segments, photos);
+
+    expect(blocks).toHaveLength(5);
+    expect(blocks[0]).toEqual({
+      type: 'paragraph',
+      text: 'Witamy na terenie badań',
+      startMs: 0,
+      endMs: 3000,
+    });
+    expect(blocks[1]).toEqual({
+      type: 'photo',
+      photoId: 'p1',
+      atMs: 1500,
+      objectKey: undefined,
+    });
+    expect(blocks[2]).toEqual({
+      type: 'paragraph',
+      text: 'Zauważamy ślady bobra',
+      startMs: 3000,
+      endMs: 7000,
+    });
+    expect(blocks[3]).toEqual({
+      type: 'photo',
+      photoId: 'p2',
+      atMs: 5000,
+      objectKey: undefined,
+    });
+    expect(blocks[4]).toEqual({
+      type: 'paragraph',
+      text: 'Robimy zdjęcie tamy',
+      startMs: 7000,
+      endMs: 10000,
+    });
   });
 });

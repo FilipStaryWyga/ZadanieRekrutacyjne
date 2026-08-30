@@ -164,6 +164,36 @@ export async function listNotes(): Promise<NoteListItem[]> {
   }));
 }
 
+export async function saveProcessedNote(
+  noteId: string,
+  summary: string,
+  blocks: Block[],
+): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    `UPDATE notes
+     SET summary = ?, blocks_json = ?, status = 'ready', error_message = NULL, updated_at = ?
+     WHERE id = ?`,
+    [summary, JSON.stringify(blocks), Date.now(), noteId],
+  );
+}
+
+export async function markAudioUploaded(noteId: string): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    `UPDATE notes SET audio_uploaded = 1, updated_at = ? WHERE id = ?`,
+    [Date.now(), noteId],
+  );
+}
+
+export async function markPhotoUploaded(photoId: string): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    `UPDATE photos SET uploaded = 1 WHERE id = ?`,
+    [photoId],
+  );
+}
+
 export async function getNote(id: string): Promise<Note | null> {
   const db = await getDatabase();
   const row = await db.getFirstAsync<NoteRow>(

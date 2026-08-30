@@ -24,6 +24,9 @@ function readFieldValue(
 interface UploadQuery {
   noteId: string;
   kind: 'audio' | 'photo';
+  id?: string;
+  offsetMs?: string;
+  caption?: string;
 }
 
 export const uploadRoutes: FastifyPluginAsync = async (fastify) => {
@@ -32,14 +35,14 @@ export const uploadRoutes: FastifyPluginAsync = async (fastify) => {
   server.post<{ Querystring: UploadQuery }>(
     '/',
     async (request, reply) => {
-      const { noteId, kind } = request.query;
+      const { noteId, kind, id: queryId, offsetMs: queryOffsetMs, caption: queryCaption } = request.query;
 
       const part = await request.file();
       if (!part) {
         return reply.status(400).send({ error: 'Brak pliku w żądaniu' });
       }
 
-      const extension = part.filename.split('.').pop() ?? 'bin';
+      const extension = part.filename.split('.').pop() ?? (kind === 'audio' ? 'm4a' : 'jpg');
       const objectKey = `${noteId}/${kind}-${randomUUID()}.${extension}`;
       const bytes = await part.toBuffer();
 
@@ -47,7 +50,7 @@ export const uploadRoutes: FastifyPluginAsync = async (fastify) => {
 
       if (kind === 'audio') {
         const input: UpsertAudioInput = {
-          id: randomUUID(),
+          id: queryId ?? randomUUID(),
           noteId,
           objectKey,
           durationMs: null,
@@ -56,14 +59,15 @@ export const uploadRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(201).send({ ok: true, id: input.id, objectKey });
       }
 
-      const offsetMs = Number(readFieldValue(part.fields, 'offsetMs', '0'));
-      const caption = readFieldValue(part.fields, 'caption', null);
+      const offsetRaw = queryOffsetMs ?? readFieldValue(part.fields, 'offsetMs', '0');
+      const offsetMs = Number(offsetRaw ?? '0');
+      const caption = queryCaption ?? readFieldValue(part.fields, 'caption', null);
 
       const input: UpsertPhotoInput = {
-        id: randomUUID(),
+        id: queryId ?? randomUUID(),
         noteId,
         objectKey,
-        offsetMs,
+        offsetMs: isNaN(offsetMs) ? 0 : offsetMs,
         caption,
       };
       await server.notes.upsertPhoto(input);

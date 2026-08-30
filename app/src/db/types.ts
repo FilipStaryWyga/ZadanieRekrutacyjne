@@ -14,8 +14,8 @@ export type Photo = {
 };
 
 export type Block =
-  | { type: 'paragraph'; text: string }
-  | { type: 'photo'; photoId: string; atMs: number };
+  | { type: 'paragraph'; text: string; startMs?: number; endMs?: number }
+  | { type: 'photo'; photoId: string; atMs: number; uri?: string; objectKey?: string };
 
 export type Note = {
   id: string;

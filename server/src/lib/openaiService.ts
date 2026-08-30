@@ -47,11 +47,11 @@ export class AIService {
 
     const rawSegments = (response.segments ?? []) as WhisperSegment[];
     return rawSegments
-      .filter((segment) => segment.text !== undefined)
+      .filter((segment) => segment.text !== undefined && segment.text.trim().length > 0)
       .map((segment) => ({
-        start: segment.start ?? 0,
-        end: segment.end ?? 0,
-        text: segment.text ?? '',
+        start: Math.round((segment.start ?? 0) * 1000),
+        end: Math.round((segment.end ?? 0) * 1000),
+        text: (segment.text ?? '').trim(),
       }));
   }
 
@@ -63,19 +63,24 @@ export class AIService {
       throw new Error('OPENAI_API_KEY nie jest skonfigurowany na backendzie');
     }
 
-    const text = transcript.map((segment) => segment.text).join(' ');
+    const text = transcript.map((segment) => segment.text).join(' ').trim();
+    if (!text) {
+      return 'Brak zarejestrowanej mowy w nagraniu do podsumowania.';
+    }
+
     const completion = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
           content:
-            'Jesteś asystentem tworzącym zwięzłe podsumowania notatek terenowych. ' +
-            'Odpowiadaj po polsku.',
+            'Jesteś profesjonalnym asystentem rzeczoznawcy samochodowego. ' +
+            'Tworzysz zwięzłe, rzeczowe podsumowanie stanu pojazdu i ustaleń z notatki terenowej. ' +
+            'Odpowiadaj czystym językiem polskim.',
         },
         {
           role: 'user',
-          content: `Tytuł notatki: ${title}\n\nTranskrypcja:\n${text}`,
+          content: `Tytuł notatki: ${title}\n\nTranskrypcja nagrania:\n${text}`,
         },
       ],
       max_tokens: 300,

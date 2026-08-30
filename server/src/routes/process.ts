@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import type { ServerApp } from '../index';
-import { interleavePhotosAndTranscript } from '../lib/interleave';
+import { interleavePhotosAndTranscript, generateInterleavedBlocks } from '../lib/interleave';
 import type { UpsertPhotoInput } from '../notesRepository';
 
 interface ProcessQuery {
@@ -33,12 +33,14 @@ export const processRoutes: FastifyPluginAsync = async (fastify) => {
     await server.notes.updateSummary(id, result.summary);
 
     const interleaved = interleavePhotosAndTranscript(result.transcript, photos);
+    const blocks = generateInterleavedBlocks(result.transcript, photos);
 
     return {
       noteId: id,
       summary: result.summary,
       transcript: result.transcript,
       interleaved,
+      blocks,
     };
   });
 

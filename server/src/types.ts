@@ -40,6 +40,10 @@ export interface TranscribedSegment {
   text: string;
 }
 
+export type Block =
+  | { type: 'paragraph'; text: string; startMs?: number; endMs?: number }
+  | { type: 'photo'; photoId: string; atMs: number; objectKey?: string };
+
 export interface ProcessResult {
   transcript: TranscribedSegment[];
   summary: string;
