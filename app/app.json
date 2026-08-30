@@ -26,6 +26,16 @@
         "ACCESS_FINE_LOCATION"
       ]
     },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Aplikacja używa kamery do robienia zdjęć terenowych.",
+          "microphonePermission": "Aplikacja używa mikrofonu do nagrywania notatek głosowych.",
+          "recordAudioAndroid": false
+        }
+      ]
+    ],
     "extra": {
       "router": {
         "origin": false
